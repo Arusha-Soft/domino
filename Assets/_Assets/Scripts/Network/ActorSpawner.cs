@@ -1,21 +1,21 @@
-using NUnit.Framework;
 using Project.Gameplay;
 using Project.UI;
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Project.Network
 {
-    public class GameNetworkManager : NetworkBehaviour
+    public class ActorSpawner : NetworkBehaviour
     {
         [SerializeField] private Actor m_ActorPrefab;
-        [SerializeField] private int m_MaxPlayers = 4;
+        [SerializeField] public int MaxPlayers = 4;
         [SerializeField] private List<Transform> m_SpawnPoints;
         [SerializeField] private List<Actor> m_Players = new List<Actor>();
+
+        public event Action OnSpawnFinished;
 
         private NetworkVariable<int> m_PlayerCount = new NetworkVariable<int>();
 
@@ -55,7 +55,7 @@ namespace Project.Network
         {
             if (IsClient)
             {
-                if (newValue == m_MaxPlayers)
+                if (newValue == MaxPlayers)
                 {
                     SetPlayerPositions();
                 }
@@ -64,7 +64,8 @@ namespace Project.Network
 
         private void SetPlayerPositions()
         {
-            Debug.Log("s");
+            Debug.Log("SetPlayerPositions");
+
             int offset = (int)NetworkManager.LocalClientId;
             int playerCount = m_PlayerCount.Value;
             int counter = 0;
@@ -94,6 +95,8 @@ namespace Project.Network
                 NetworkClient actor = NetworkManager.ConnectedClients[(ulong)i];
                 actor.PlayerObject.gameObject.transform.SetPositionAndRotation(tempSpawnPoints[i].position, tempSpawnPoints[i].rotation);
             }
+
+            OnSpawnFinished?.Invoke();
         }
 
         private void OnClientDisconnect(ulong clientId)

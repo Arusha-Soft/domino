@@ -1,9 +1,10 @@
 using AS.Project.Core;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace Project.Core
 {
-    public class Domino : MonoBehaviour
+    public class Domino : NetworkBehaviour
     {
         [SerializeField] private SpriteRenderer m_Sprite;
 
