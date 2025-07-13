@@ -43,7 +43,6 @@ namespace Project.Network
             {
                 Actor actor = Instantiate(m_ActorPrefab);
                 actor.ActorName.Value = new FixedString128Bytes($"Player_{clientId}");
-                actor.Initialize(new List<Core.Domino>());
                 actor.NetworkObject.SpawnAsPlayerObject(clientId, true);
 
                 m_Players.Add(actor);

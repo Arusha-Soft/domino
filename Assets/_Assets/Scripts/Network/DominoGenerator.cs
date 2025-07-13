@@ -1,7 +1,7 @@
 using AS.Project.Core;
 using Project.Core;
+using Project.Gameplay;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -19,15 +19,26 @@ namespace Project.Network
         [SerializeField] private Domino m_DominoPrefab;
         [SerializeField] private List<DominoProperties> m_DominoProperties;
 
-        private List<Domino> m_Dominos = new List<Domino>();
 
         [SerializeField] private ulong[] m_DominoIds;
         [SerializeField] private ulong[] m_RandomizedDominoIds;
-        [SerializeField] private ulong[] m_OwnedDominoIds;
+
+        private List<Domino> m_Dominos = new List<Domino>();
+
+        public static DominoGenerator Instance { private set; get; }
 
         public override void OnNetworkSpawn()
         {
             m_ActorSpawner.OnSpawnFinished += OnSpawnFinished;
+
+            if (Instance == null)
+            {
+                Instance = this;
+            }
+            else
+            {
+                Destroy(this);
+            }
         }
 
         private void OnSpawnFinished()
@@ -56,7 +67,7 @@ namespace Project.Network
             SendDominoIdsClientRpc(m_DominoIds);
             m_RandomizedDominoIds = m_DominoIds;
             Shuffle(m_RandomizedDominoIds);
-            SetClientDominoClientRpc(m_RandomizedDominoIds);
+            SetClientsDominos(m_RandomizedDominoIds);
         }
 
         [ClientRpc]
@@ -72,22 +83,45 @@ namespace Project.Network
             }
         }
 
-        [ClientRpc]
-        private void SetClientDominoClientRpc(ulong[] randomizedDominoIds)
+        private void SetClientsDominos(ulong[] randomizedDominoIds)
         {
             int idCount = randomizedDominoIds.Length / m_ActorSpawner.MaxPlayers;
+            ulong[] ownedDominoIds;
 
-            int startIndex = ((int)OwnerClientId * idCount);
-
-            m_OwnedDominoIds = new ulong[idCount];
-            int index = 0;
-
-            for (int i = startIndex; i < idCount; i++)
+            for (int i = 0; i < NetworkManager.ConnectedClientsIds.Count; i++)
             {
-                m_OwnedDominoIds[index] = randomizedDominoIds[i];
-                Debug.Log("Id: " + m_OwnedDominoIds[index]);
-                index++;
+                ulong id = NetworkManager.ConnectedClientsIds[i];
+
+                int startIndex = ((int)id * idCount);
+
+                ownedDominoIds = new ulong[idCount];
+                int index = 0;
+                int count = idCount * ((int)id + 1);
+
+                for (int j = startIndex; j < count; j++)
+                {
+                    ownedDominoIds[index] = randomizedDominoIds[j];
+                    Debug.Log("Domino Id: " + ownedDominoIds[index]);
+                    index++;
+                }
+
+                NetworkObject actorNetworkObject = NetworkManager.SpawnManager.GetPlayerNetworkObject(id);
+                Actor actor = actorNetworkObject.GetComponent<Actor>();
+                actor.InitializeClientRpc(ownedDominoIds);
             }
+        }
+
+        public List<Domino> GetDominosById(ulong[] dominoIds)
+        {
+            List<Domino> dominos = new List<Domino>();
+
+            for (int i = 0; i < dominoIds.Length; i++)
+            {
+                Domino domino = NetworkManager.SpawnManager.SpawnedObjects[dominoIds[i]].GetComponent<Domino>();
+                dominos.Add(domino);
+            }
+
+            return dominos;
         }
 
         private void Shuffle(ulong[] array)

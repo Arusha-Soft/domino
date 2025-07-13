@@ -1,4 +1,5 @@
 using Project.Core;
+using Project.Network;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
@@ -14,6 +15,8 @@ namespace Project.Gameplay
 
         protected List<Domino> Dominos;
 
+        [SerializeField] private ulong[] m_OwnedDominoIds;
+
         public override void OnNetworkSpawn()
         {
             gameObject.name = ActorName.Value.ToString();
@@ -26,23 +29,36 @@ namespace Project.Gameplay
             ActorName.OnValueChanged -= OnChangeName;
         }
 
-        public void Initialize(List<Domino> dominos)
+        [ClientRpc]
+        public void InitializeClientRpc(ulong[] dominoIds)
         {
-            Dominos = dominos;
-            RebuildDeck();
+            m_OwnedDominoIds = dominoIds;
+            Dominos = DominoGenerator.Instance.GetDominosById(m_OwnedDominoIds);
+
+            if (IsOwner)
+            {
+                RebuildDeckServerRpc();
+            }
         }
 
-        private void RebuildDeck()
+        [ServerRpc]
+        private void RebuildDeckServerRpc()
         {
             for (int i = 0; i < Dominos.Count; i++)
             {
-                Dominos[i].transform.SetParent(m_2dGorup.transform);
+                Dominos[i].GetComponent<NetworkObject>().TrySetParent(m_2dGorup.transform);
             }
 
+            ArrageDominosClientRpc();
+        }
+
+        [ClientRpc]
+        private void ArrageDominosClientRpc()
+        {
             m_2dGorup.ArrangeChildren();
         }
 
-        private void OnChangeName(FixedString128Bytes pre , FixedString128Bytes newValue)
+        private void OnChangeName(FixedString128Bytes pre, FixedString128Bytes newValue)
         {
             gameObject.name = newValue.ToString();
         }
