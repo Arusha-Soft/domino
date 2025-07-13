@@ -85,6 +85,7 @@ namespace Project.Network
             for (int i = startIndex; i < idCount; i++)
             {
                 m_OwnedDominoIds[index] = randomizedDominoIds[i];
+                Debug.Log("Id: " + m_OwnedDominoIds[index]);
                 index++;
             }
         }
