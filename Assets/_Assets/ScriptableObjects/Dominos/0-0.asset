@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cba3dcfa3aaf8a94a9c9b96f9d2d64ec, type: 3}
   m_Name: 0-0
   m_EditorClassIdentifier: 
+  Id: 04cda1b3-43c3-4bbe-a411-5ac0f3e5d3cb
   Icon: {fileID: -1092610856, guid: e38be27457c496548b616cfa049ea8a7, type: 3}
   LeftPoint: 0
   RightPoint: 0
