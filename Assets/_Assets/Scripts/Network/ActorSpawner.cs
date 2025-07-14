@@ -50,24 +50,13 @@ namespace Project.Network
 
                 if(m_PlayerCount.Value >= MaxPlayers)
                 {
-                    DpClientRpc();
+                    SetPlayerPositionsClientRpc();
                 }
             }
         }
 
-        private void OnPlayerCountChanged(int previousValue, int newValue)
-        {
-            //if (IsClient)
-            //{
-            //    if (newValue == MaxPlayers)
-            //    {
-            //        SetPlayerPositions();
-            //    }
-            //}
-        }
-
         [ClientRpc]
-        private void DpClientRpc()
+        private void SetPlayerPositionsClientRpc()
         {
             SetPlayerPositions();
         }
