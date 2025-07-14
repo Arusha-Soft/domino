@@ -118,6 +118,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   m_2dGorup: {fileID: 5440383933483993410}
+  m_UnknownDominoSprite: {fileID: -9095717837082945937, guid: a757fea1a98bdb24797e23da6105aa27, type: 3}
   ActorName:
     m_InternalValue:
       utf8LengthInBytes: 0

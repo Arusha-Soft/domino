@@ -8,9 +8,18 @@ namespace Project.Core
     {
         [SerializeField] private SpriteRenderer m_Sprite;
 
+        private DominoProperties m_Properties;
+
         public void Init(DominoProperties properties)
         {
-            m_Sprite.sprite = properties.Icon;
+            m_Properties = properties;
+            SetSprite(properties.Icon);
+        }
+
+        public Domino SetSprite(Sprite sprite)
+        {
+            m_Sprite.sprite = sprite;
+            return this;
         }
     }
 }

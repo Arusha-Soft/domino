@@ -47,18 +47,29 @@ namespace Project.Network
 
                 m_Players.Add(actor);
                 m_PlayerCount.Value++;
+
+                if(m_PlayerCount.Value >= MaxPlayers)
+                {
+                    DpClientRpc();
+                }
             }
         }
 
         private void OnPlayerCountChanged(int previousValue, int newValue)
         {
-            if (IsClient)
-            {
-                if (newValue == MaxPlayers)
-                {
-                    SetPlayerPositions();
-                }
-            }
+            //if (IsClient)
+            //{
+            //    if (newValue == MaxPlayers)
+            //    {
+            //        SetPlayerPositions();
+            //    }
+            //}
+        }
+
+        [ClientRpc]
+        private void DpClientRpc()
+        {
+            SetPlayerPositions();
         }
 
         private void SetPlayerPositions()
@@ -66,7 +77,7 @@ namespace Project.Network
             Debug.Log("SetPlayerPositions");
 
             int offset = (int)NetworkManager.LocalClientId;
-            int playerCount = m_PlayerCount.Value;
+            int playerCount = MaxPlayers;
             int counter = 0;
 
             int startIndex = offset == 0 ? 0 : playerCount - offset;
@@ -91,11 +102,26 @@ namespace Project.Network
 
             for (int i = 0; i < tempSpawnPoints.Count; i++)
             {
-                NetworkClient actor = NetworkManager.ConnectedClients[(ulong)i];
-                actor.PlayerObject.gameObject.transform.SetPositionAndRotation(tempSpawnPoints[i].position, tempSpawnPoints[i].rotation);
+                NetworkClient actorNetwrokObject = NetworkManager.ConnectedClients[(ulong)i];
+                Actor actor = actorNetwrokObject.PlayerObject.GetComponent<Actor>();
+                actor.gameObject.transform.SetPositionAndRotation(tempSpawnPoints[i].position, tempSpawnPoints[i].rotation);
+                actor.SetSpawnPointInedex(GetSpawnPointIndex(tempSpawnPoints[i]));
             }
 
             OnSpawnFinished?.Invoke();
+        }
+
+        private int GetSpawnPointIndex(Transform transform)
+        {
+            for (int i = 0; i < m_SpawnPoints.Count; i++)
+            {
+                if (m_SpawnPoints[i] == transform)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private void OnClientDisconnect(ulong clientId)

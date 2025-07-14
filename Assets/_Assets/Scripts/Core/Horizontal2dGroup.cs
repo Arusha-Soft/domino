@@ -14,19 +14,20 @@ namespace Project.Core
             float totalWidth = 0f;
             int childCount = transform.childCount;
 
+            // First pass: calculate total width
             for (int i = 0; i < childCount; i++)
             {
                 Transform child = transform.GetChild(i);
                 SpriteRenderer spriteRenderer = child.GetComponent<SpriteRenderer>();
 
-                if (spriteRenderer != null)
+                float width = 1f;
+
+                if (spriteRenderer != null && spriteRenderer.sprite != null)
                 {
-                    totalWidth += spriteRenderer.bounds.size.x;
+                    width = spriteRenderer.sprite.bounds.size.x * child.localScale.x;
                 }
-                else
-                {
-                    totalWidth += 1f;
-                }
+
+                totalWidth += width;
 
                 if (i < childCount - 1)
                     totalWidth += m_Spacing;
@@ -37,20 +38,22 @@ namespace Project.Core
 
             StopAllCoroutines();
 
+            // Second pass: move children
             for (int i = 0; i < childCount; i++)
             {
                 Transform child = transform.GetChild(i);
                 SpriteRenderer spriteRenderer = child.GetComponent<SpriteRenderer>();
+
                 float width = 1f;
 
-                if (spriteRenderer != null)
+                if (spriteRenderer != null && spriteRenderer.sprite != null)
                 {
-                    width = spriteRenderer.bounds.size.x;
+                    width = spriteRenderer.sprite.bounds.size.x * child.localScale.x;
                 }
 
                 Vector3 target = new Vector3(currentX + width / 2f, 0f, 0f);
                 StartCoroutine(Move(child, target));
-                //child.localPosition = ;
+
                 currentX += width + m_Spacing;
             }
         }
@@ -58,6 +61,12 @@ namespace Project.Core
         public void Stop()
         {
             StopAllCoroutines();
+        }
+
+        public Horizontal2dGroup SetSpacing(float spacing)
+        {
+            m_Spacing = spacing;
+            return this;
         }
 
         private IEnumerator Move(Transform targetTransform, Vector3 targetLocalPosition)
