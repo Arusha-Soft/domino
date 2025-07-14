@@ -28,8 +28,6 @@ namespace Project.Network
         {
             NetworkManager.OnClientConnectedCallback += OnClientConnected;
             NetworkManager.OnClientDisconnectCallback += OnClientDisconnect;
-
-            m_PlayerCount.OnValueChanged += OnPlayerCountChanged;
         }
 
         private void OnDisable()
