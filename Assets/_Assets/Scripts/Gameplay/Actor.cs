@@ -1,5 +1,6 @@
 using Project.Core;
 using Project.Network;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
@@ -55,7 +56,7 @@ namespace Project.Gameplay
         [ClientRpc]
         private void ArrageDominosClientRpc()
         {
-            m_2dGorup.ArrangeChildren();
+            //m_2dGorup.ArrangeChildren();
         }
 
         private void OnChangeName(FixedString128Bytes pre, FixedString128Bytes newValue)

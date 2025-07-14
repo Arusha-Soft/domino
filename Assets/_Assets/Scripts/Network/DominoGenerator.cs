@@ -87,6 +87,7 @@ namespace Project.Network
         {
             int idCount = randomizedDominoIds.Length / m_ActorSpawner.MaxPlayers;
             ulong[] ownedDominoIds;
+            List<ulong[]> ownedDominosIdsList = new List<ulong[]>();
 
             for (int i = 0; i < NetworkManager.ConnectedClientsIds.Count; i++)
             {
@@ -105,9 +106,17 @@ namespace Project.Network
                     index++;
                 }
 
-                NetworkObject actorNetworkObject = NetworkManager.SpawnManager.GetPlayerNetworkObject(id);
+                ownedDominosIdsList.Add(ownedDominoIds);
+            }
+
+            for (int i = 0; i < NetworkManager.ConnectedClientsIds.Count; i++)
+            {
+                ulong id = NetworkManager.ConnectedClientsIds[i];
+
+                NetworkObject actorNetworkObject = NetworkManager.ConnectedClients[id].PlayerObject;//NetworkManager.SpawnManager.GetPlayerNetworkObject(id);
                 Actor actor = actorNetworkObject.GetComponent<Actor>();
-                actor.InitializeClientRpc(ownedDominoIds);
+
+                actor.InitializeClientRpc(ownedDominosIdsList[i]);
             }
         }
 
