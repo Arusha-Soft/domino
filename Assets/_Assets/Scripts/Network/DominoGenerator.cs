@@ -15,7 +15,6 @@ namespace Project.Network
 
         [Header("Settings")]
         [SerializeField] private float m_GenerateRadius = 5f;
-        [SerializeField] private float m_MoveDuration = 2;
         [SerializeField] private Domino m_DominoPrefab;
         [SerializeField] private List<DominoProperties> m_DominoProperties;
 
