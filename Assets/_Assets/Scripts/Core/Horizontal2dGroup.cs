@@ -7,6 +7,15 @@ namespace Project.Core
     {
         [SerializeField] private float m_MoveDuration = 2f;
         [SerializeField] private float m_Spacing;
+        [SerializeField] private bool m_UpdateInAwake = false;
+
+        private void Awake()
+        {
+            if (m_UpdateInAwake)
+            {
+                ArrangeChildren();
+            }
+        }
 
         [ContextMenu("Update")]
         public void ArrangeChildren()

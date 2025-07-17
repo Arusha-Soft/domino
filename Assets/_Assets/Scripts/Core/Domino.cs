@@ -1,4 +1,5 @@
 using AS.Project.Core;
+using Project.Utilities;
 using System;
 using System.Collections;
 using Unity.Netcode;
@@ -22,6 +23,53 @@ namespace Project.Core
         ///for vertical dominos up is right and down is left
         public int UpValue { private set; get; }
         public int DownValue { private set; get; }
+        public int RightValue
+        {
+            get
+            {
+                if (GetSignedAngle() > 0)
+                {
+                    return DownValue;
+                }
+                else if (GetSignedAngle() < 0)
+                {
+                    return UpValue;
+                }
+                else
+                {
+                    return UpValue;
+                }
+            }
+        }
+
+        public int LeftValue
+        {
+            get
+            {
+                if (GetSignedAngle() > 0)
+                {
+                    return UpValue;
+                }
+                else if (GetSignedAngle() < 0)
+                {
+                    return DownValue;
+                }
+                else
+                {
+                    return DownValue;
+                }
+            }
+        }
+
+        float GetSignedAngle()
+        {
+            float angle = transform.rotation.eulerAngles.z;
+            angle = angle % 360;
+            if (angle > 180)
+                angle -= 360;
+            return angle;
+        }
+
         public bool UpIsConnected { private set; get; } = false;
         public bool DownIsConnected { private set; get; } = false;
         public event Action<Domino> OnStartDrag;
@@ -71,14 +119,14 @@ namespace Project.Core
             return this;
         }
 
-        public Domino MoveTo(Transform target)
+        public Domino MoveTo(Transform target, Action onFinish = null)
         {
             if (m_Moving != null)
             {
                 StopCoroutine(m_Moving);
             }
 
-            m_Moving = StartCoroutine(Moving(target));
+            m_Moving = StartCoroutine(Moving(target, onFinish));
 
             return this;
         }
@@ -198,7 +246,7 @@ namespace Project.Core
         public bool IsDouble() =>
             m_Properties.LeftPoint == m_Properties.RightPoint;
 
-        private IEnumerator Moving(Transform target)
+        private IEnumerator Moving(Transform target, Action onFinish)
         {
             if (target != null)
             {
@@ -212,6 +260,7 @@ namespace Project.Core
                 }
             }
 
+            onFinish?.Invoke();
             m_Moving = null;
         }
 
@@ -219,7 +268,8 @@ namespace Project.Core
         private void Updatea()
         {
             Debug.Log($"Domino: {gameObject.name} IsFree: {IsFree(out bool FreeFromLeft, out bool freeFromRight, out bool freeFromUp, out bool FreeFromDown)} " +
-                $"Free From Up: {freeFromUp} / Free From Down: {FreeFromDown} / Free From Left: {FreeFromLeft} / Free From Right: {freeFromRight}");
+                $"Free From Up: {freeFromUp} / Free From Down: {FreeFromDown} / Free From Left: {FreeFromLeft} / Free From Right: {freeFromRight}" +
+                $"Size: {this.GetSpriteRenderer().size}");
         }
         private void OnStartDraging()
         {

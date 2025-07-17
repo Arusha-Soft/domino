@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Pool;
+using UnityEngine.UIElements;
 
 namespace Project.Core
 {
@@ -15,12 +16,17 @@ namespace Project.Core
         [SerializeField] private Transform m_TempPointParent;
         [SerializeField] private float m_MoveAcceptThresholdDistance = 5f;
         [SerializeField] private float m_SpaceBetweenDominos = 0.1f;
+        [SerializeField] private int m_MaxLineDominoCount = 27;
 
         [SerializeField] private Domino[] m_AllDominos; // Todo make this list private and init on runtime
 
         private List<Domino> m_OnBoardDominos = new List<Domino>();
         private List<TempDominoPoint> m_TempPoints = new List<TempDominoPoint>();
         private ObjectPool<TempDominoPoint> m_TempPointPool;
+        private int m_CurrentLineDominoCount = 0;
+        private bool m_FirstLineIsFilled = false;
+        private bool m_UpLineIsStarted = false;
+        private bool m_DownLineIsStarted = false;
         private int OnBoardDominoCount => m_OnBoardDominos.Count;
 
         private void Awake()
@@ -92,8 +98,15 @@ namespace Project.Core
 
         private void SetupDomino_OtherMoves()
         {
-            List<int> points = GetAvailableDominoPoints();
+            List<int> points = new List<int>();
+            TwoEndLineDominosData data = GetTwoEndLineDominos();
+            AddPoints(points, data.Domino1);
+            AddPoints(points, data.Domino2);
 
+            for (int i = 0; i < points.Count; i++)
+            {
+                Debug.Log(points[i]);
+            }
             for (int i = 0; i < m_AllDominos.Length; i++)
             {
                 Domino domino = m_AllDominos[i];
@@ -114,6 +127,21 @@ namespace Project.Core
                     }
                 }
             }
+
+            static void AddPoints(List<int> points, Domino domino)
+            {
+                if (domino.IsFree(out bool freeFromLeft, out bool freeFromRight, out _, out _))
+                {
+                    if (freeFromLeft)
+                    {
+                        points.Add(domino.LeftValue);
+                    }
+                    if (freeFromRight)
+                    {
+                        points.Add(domino.RightValue);
+                    }
+                }
+            }
         }
 
         #endregion
@@ -123,123 +151,209 @@ namespace Project.Core
         {
             TempDominoPoint tempPoint = GetTempPoint();
             tempPoint.transform.MakeVertical();
-            //tempPoint.SetUpIsConnected(true);
             Vector3 centerOfLine = m_MiddleLine.GetMiddle();
             tempPoint.transform.position = centerOfLine;
         }
 
         private void MoveDomino_SecondMove()
         {
-            //TempDominoPoint tempPointRight = GetTempPoint();
-            //TempDominoPoint tempPointLeft = GetTempPoint();
             Domino lastDomino = m_OnBoardDominos[0];
-            int targetValue = lastDomino.UpValue; // both are same
-            lastDomino.IsFree(out bool freeFromLeft, out bool freeFromRight, out _, out _);
-            Debug.Log($"Free From Left: {freeFromLeft} / Free From Right: {freeFromRight}");
-            D(lastDomino, m_SelectedDomino);
-            //tempPointRight.MakeHorizontal(true, targetValue, selectedDomino);
-            //tempPointLeft.MakeHorizontal(false, targetValue, selectedDomino);
-            //tempPointRight.transform.MoveHorizontal(true, lastDomino, m_SpaceBetweenDominos);
-            //tempPointLeft.transform.MoveHorizontal(false, lastDomino, m_SpaceBetweenDominos);
+            GenerateDominoPoint(lastDomino, m_SelectedDomino);
         }
 
         private void MoveDomino_OtherMoves()
         {
-            List<int> points = GetAvailableDominoPoints();
             TwoEndLineDominosData twoEndLineDominosData = GetTwoEndLineDominos();
             Domino domino1 = twoEndLineDominosData.Domino1;
             Domino domino2 = twoEndLineDominosData.Domino2;
 
-            D(domino1, m_SelectedDomino);
-            D(domino2, m_SelectedDomino);
-            //D(domino1);
-            //D(domino2);
-
-            for (int i = 0; i < points.Count; i++)
-            {
-                Debug.Log(points[i]);
-            }
-
-
-            //TODO
+            GenerateDominoPoint(domino1, m_SelectedDomino);
+            GenerateDominoPoint(domino2, m_SelectedDomino);
         }
 
-        private void D(Domino onBoardDomino, Domino selectedDomino)
+        private void GenerateDominoPoint(Domino onBoardDomino, Domino selectedDomino)
         {
             if (onBoardDomino.IsFree(out bool freeFromLeft, out bool freeFromRight, out _, out _))
             {
-                Vector3 position = onBoardDomino.transform.position;
-                Vector3 rotation = Vector3.zero;
-
                 if (freeFromLeft)
                 {
-                    TempDominoPoint leftDominoPoint = GetTempPoint();
-
-                    position += Vector3.left * 5;
-
-                    if (!selectedDomino.IsDouble())
-                    {
-                        if (onBoardDomino.UpValue == selectedDomino.UpValue ||
-                            onBoardDomino.DownValue == selectedDomino.UpValue)
-                        {
-                            rotation = onBoardDomino.transform.position - position;
-                        }
-                        else if (onBoardDomino.UpValue == selectedDomino.DownValue ||
-                                 onBoardDomino.DownValue == selectedDomino.DownValue)
-                        {
-                            rotation = position - onBoardDomino.transform.position;
-                        }
-                        else
-                        {
-                            ReleaseTempPoint(leftDominoPoint);
-                        }
-                    }
-
-                    leftDominoPoint.transform.up = rotation;
-
-                    float selectedDominoBoundsX = leftDominoPoint.GetSpriteRenderer().bounds.size.x;
-                    float onBoardDominBoundsX = onBoardDomino.GetSpriteRenderer().bounds.size.x;
-                    float horizontalMoveAmount = ((selectedDominoBoundsX / 2f + onBoardDominBoundsX / 2f) + m_SpaceBetweenDominos) * -1f;
-                    position = onBoardDomino.transform.position;
-                    position.x += horizontalMoveAmount;
-
-                    leftDominoPoint.transform.position = position;
+                    Check(false);
                 }
 
                 if (freeFromRight)
                 {
-                    TempDominoPoint rightDominoPoint = GetTempPoint();
+                    Check(true);
+                }
+            }
 
-                    position += Vector3.right * 5;
+            void Check(bool isFreeFromRight)
+            {
+                Vector3 position = onBoardDomino.transform.position;
+                Vector3 rotation = Vector3.zero;
 
-                    if (!selectedDomino.IsDouble())
+                TempDominoPoint dominoPoint = GetTempPoint();
+
+                position += Vector3.right * (isFreeFromRight ? 5 : -5);
+
+                if (m_FirstLineIsFilled)
+                {
+                    if (m_UpLineIsStarted || m_DownLineIsStarted)
                     {
-                        if (onBoardDomino.UpValue == selectedDomino.UpValue ||
-                            onBoardDomino.DownValue == selectedDomino.UpValue)
+                        Debug.Log("Not implemented");
+                    }
+                    else
+                    {
+                        if (onBoardDomino.IsFree(out freeFromLeft, out freeFromRight, out _, out _))
                         {
-                            rotation = onBoardDomino.transform.position - position;
+                            if (freeFromLeft || freeFromRight)
+                            {
+                                if (selectedDomino.DownValue == onBoardDomino.DownValue ||
+                                    selectedDomino.DownValue == onBoardDomino.UpValue)
+                                {
+                                    rotation = Vector3.up;
+                                }
+                                else if (selectedDomino.UpValue == onBoardDomino.DownValue ||
+                                         selectedDomino.UpValue == onBoardDomino.UpValue)
+                                {
+                                    rotation = Vector3.down;
+                                }
+                                else
+                                {
+                                    ReleaseTempPoint(dominoPoint);
+                                }
+                            }
+
+                            dominoPoint.transform.up = rotation;
+                            position = CalculatePosition(dominoPoint, isFreeFromRight);
+                            position.y += onBoardDomino.GetSpriteRenderer().bounds.size.y / 2f;
                         }
-                        else if (onBoardDomino.UpValue == selectedDomino.DownValue ||
-                                 onBoardDomino.DownValue == selectedDomino.DownValue)
+                    }
+                }
+                else
+                {
+                    if (selectedDomino.IsDouble())
+                    {
+                        if (selectedDomino.UpValue != onBoardDomino.UpValue &&
+                            selectedDomino.UpValue != onBoardDomino.DownValue)
                         {
-                            rotation = position - onBoardDomino.transform.position;
+                            ReleaseTempPoint(dominoPoint);
+                        }
+                    }
+                    else
+                    {
+                        if (onBoardDomino.IsDouble())
+                        {
+                            if (onBoardDomino.UpValue == selectedDomino.UpValue)
+                            {
+                                rotation = onBoardDomino.transform.position - position;
+                            }
+                            else if (onBoardDomino.UpValue == selectedDomino.DownValue)
+                            {
+                                rotation = position - onBoardDomino.transform.position;
+                            }
+                            else
+                            {
+                                ReleaseTempPoint(dominoPoint);
+                            }
                         }
                         else
                         {
-                            ReleaseTempPoint(rightDominoPoint);
+                            if (onBoardDomino.IsFree(out bool freeFromLeft, out bool freeFromRight, out _, out _))
+                            {
+                                if (freeFromLeft)
+                                {
+                                    if (onBoardDomino.LeftValue == selectedDomino.UpValue)
+                                    {
+                                        rotation = onBoardDomino.transform.position - position;
+                                    }
+                                    else if (onBoardDomino.LeftValue == selectedDomino.DownValue)
+                                    {
+                                        rotation = position - onBoardDomino.transform.position;
+                                    }
+                                    else
+                                    {
+                                        ReleaseTempPoint(dominoPoint);
+                                    }
+                                }
+
+                                if (freeFromRight)
+                                {
+                                    if (onBoardDomino.RightValue == selectedDomino.UpValue)
+                                    {
+                                        rotation = onBoardDomino.transform.position - position;
+                                    }
+                                    else if (onBoardDomino.RightValue == selectedDomino.DownValue)
+                                    {
+                                        rotation = position - onBoardDomino.transform.position;
+                                    }
+                                    else
+                                    {
+                                        ReleaseTempPoint(dominoPoint);
+                                    }
+                                }
+                            }
                         }
                     }
 
-                    rightDominoPoint.transform.up = rotation;
-
-                    float selectedDominoBoundsX = rightDominoPoint.GetSpriteRenderer().bounds.size.x;
-                    float onBoardDominBoundsX = onBoardDomino.GetSpriteRenderer().bounds.size.x;
-                    float horizontalMoveAmount = ((selectedDominoBoundsX / 2f + onBoardDominBoundsX / 2f) + m_SpaceBetweenDominos) * 1f;
-                    position = onBoardDomino.transform.position;
-                    position.x += horizontalMoveAmount;
-
-                    rightDominoPoint.transform.position = position;
+                    dominoPoint.transform.up = rotation;
+                    position = CalculatePosition(dominoPoint, isFreeFromRight);
                 }
+
+
+                //if (isFreeFromRight)
+                //{
+                //    if (onBoardDomino.UpValue == selectedDomino.UpValue ||
+                //        onBoardDomino.UpValue == selectedDomino.DownValue)
+                //    {
+                //        rotation = position - onBoardDomino.transform.position;
+                //    }
+                //    else
+                //    {
+                //        ReleaseTempPoint(dominoPoint);
+                //    }
+                //}
+                //else
+                //{
+                //    if (onBoardDomino.DownValue == selectedDomino.UpValue ||
+                //        onBoardDomino.DownValue == selectedDomino.DownValue)
+                //    {
+                //        rotation = onBoardDomino.transform.position - position;
+                //    }
+                //    else
+                //    {
+                //        ReleaseTempPoint(dominoPoint);
+                //    }
+                //}
+
+                //if (onBoardDomino.UpValue == selectedDomino.UpValue ||
+                //    onBoardDomino.DownValue == selectedDomino.UpValue)
+                //{
+                //    rotation = onBoardDomino.transform.position - position;
+                //}
+                //else if (onBoardDomino.UpValue == selectedDomino.DownValue ||
+                //         onBoardDomino.DownValue == selectedDomino.DownValue)
+                //{
+                //    rotation = position - onBoardDomino.transform.position;
+                //}
+                //else
+                //{
+                //    ReleaseTempPoint(dominoPoint);
+                //}
+
+                //rotation = isFreeFromRight ? rotation : -rotation;
+
+                dominoPoint.transform.position = position;
+            }
+
+            Vector3 CalculatePosition(TempDominoPoint dominoPoint, bool isRight)
+            {
+                Vector3 position;
+                float selectedDominoBoundsX = dominoPoint.GetSpriteRenderer().bounds.size.x;
+                float onBoardDominBoundsX = onBoardDomino.GetSpriteRenderer().bounds.size.x;
+                float horizontalMoveAmount = ((selectedDominoBoundsX / 2f + onBoardDominBoundsX / 2f) + m_SpaceBetweenDominos) * (isRight ? 1f : -1f);
+                position = onBoardDomino.transform.position;
+                position.x += horizontalMoveAmount;
+                return position;
             }
         }
 
@@ -266,18 +380,20 @@ namespace Project.Core
             for (int i = 0; i < m_OnBoardDominos.Count; i++)
             {
                 Domino domino = m_OnBoardDominos[i];
-                if (!domino.UpIsConnected || !domino.DownIsConnected)
+                if (domino.IsFree(out _, out _, out _, out _))
                 {
                     if (domino1 == null)
                     {
                         domino1 = domino;
                     }
-                    else
+                    else if (domino2 == null)
                     {
                         domino2 = domino;
                     }
-
-                    continue;
+                    else
+                    {
+                        Debug.LogWarning("We have more then two free domino");
+                    }
                 }
             }
 
@@ -340,12 +456,25 @@ namespace Project.Core
 
             movedDomino.SetUpIsConnected(closestTempPoint.UpIsConnected);
             movedDomino.SetDownIsConnected(closestTempPoint.DownIsConnected);
-            movedDomino.MoveTo(closestTempPoint.transform);
+            movedDomino.MoveTo(closestTempPoint.transform, () =>
+            {
+                m_CurrentLineDominoCount += movedDomino.IsVertical() ? 1 : 2;
+                CheckLineFilled();
+            });
+
             m_OnBoardDominos.Add(movedDomino);
 
             return true;
         }
 
+        private void CheckLineFilled()
+        {
+            if (m_CurrentLineDominoCount >= m_MaxLineDominoCount)
+            {
+                m_FirstLineIsFilled = true;
+                Debug.Log("Line filled");
+            }
+        }
         private TempDominoPoint GetClosestTempPoint(Domino movedDomino)
         {
             List<float> distances = new List<float>(m_TempPoints.Count);
