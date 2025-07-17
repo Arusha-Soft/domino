@@ -955,7 +955,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_MiddleLine: {fileID: 1326972145}
-  m_TempPointPrefab: {fileID: 2106617955337328594, guid: 6d47c3290e8e27d49b7e5d778105e492, type: 3}
+  m_TempPointPrefab: {fileID: 1694610085244150628, guid: 6d47c3290e8e27d49b7e5d778105e492, type: 3}
   m_TempPointParent: {fileID: 488871552}
   m_MoveAcceptThresholdDistance: 2
   m_SpaceBetweenDominos: 0.05

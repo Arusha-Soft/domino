@@ -13,14 +13,17 @@ namespace Project.Core
         [SerializeField] private SpriteRenderer m_Sprite;
         [SerializeField] private Drag2DObject m_Drag2DObject;
         [SerializeField] private GameObject m_Blocker;
+        [SerializeField] private LayerMask m_DominoLayer;
 
         private DominoProperties m_Properties;
         private DominoStatus m_Status = DominoStatus.Active;
         private Coroutine m_Moving;
 
+        ///for vertical dominos up is right and down is left
         public int UpValue { private set; get; }
         public int DownValue { private set; get; }
-
+        public bool UpIsConnected { private set; get; } = false;
+        public bool DownIsConnected { private set; get; } = false;
         public event Action<Domino> OnStartDrag;
         public event Action<Domino> OnEndDrag;
 
@@ -80,6 +83,118 @@ namespace Project.Core
             return this;
         }
 
+        public Domino SetUpIsConnected(bool isConnected)
+        {
+            UpIsConnected = isConnected;
+            return this;
+        }
+
+        public Domino SetDownIsConnected(bool isConnected)
+        {
+            DownIsConnected = isConnected;
+            return this;
+        }
+
+        public bool IsFree(out bool freeFromLeft, out bool freeFromRight, out bool freeFromUp, out bool freeFromDown)
+        {
+            bool result = false;
+            freeFromUp = false;
+            freeFromDown = false;
+            freeFromRight = false;
+            freeFromLeft = false;
+
+            //if (IsVertical())
+            //{
+            Debug.DrawRay(transform.position, Vector3.right * 100, Color.red, 5);
+            Debug.DrawRay(transform.position, Vector3.left * 100, Color.red, 5);
+
+            RaycastHit2D[] rightHitData = Physics2D.RaycastAll(transform.position, Vector3.right, float.MaxValue, m_DominoLayer);
+            RaycastHit2D[] leftHitData = Physics2D.RaycastAll(transform.position, Vector3.left, float.MaxValue, m_DominoLayer);
+
+            for (int i = 0; i < rightHitData.Length; i++)
+            {
+                if (rightHitData[i].collider.gameObject == this.gameObject)
+                {
+                    freeFromRight = true;
+                    continue;
+                }
+
+                freeFromRight = rightHitData[i].collider == null;
+
+                if (freeFromRight)
+                {
+                    break;
+                }
+            }
+
+            for (int i = 0; i < leftHitData.Length; i++)
+            {
+                if (leftHitData[i].collider.gameObject == this.gameObject)
+                {
+                    freeFromLeft = true;
+                    continue;
+                }
+
+                freeFromLeft = leftHitData[i].collider == null;
+
+                if (freeFromLeft)
+                {
+                    break;
+                }
+            }
+
+            result = freeFromRight || freeFromLeft;
+            //}
+            //else
+            //{
+            //    Debug.DrawRay(transform.position, Vector3.up * 100, Color.red, 5);
+            //    Debug.DrawRay(transform.position, Vector3.down * 100, Color.red, 5);
+
+            //    RaycastHit2D[] upHitData = Physics2D.RaycastAll(transform.position, Vector3.up, float.MaxValue, m_DominoLayer);
+            //    RaycastHit2D[] downHitData = Physics2D.RaycastAll(transform.position, Vector3.down, float.MaxValue, m_DominoLayer);
+
+            //    for (int i = 0; i < upHitData.Length; i++)
+            //    {
+            //        if (upHitData[i].collider.gameObject == this.gameObject)
+            //        {
+            //            freeFromUp = true;
+            //            continue;
+            //        }
+
+            //        freeFromUp = upHitData[i].collider == null;
+
+            //        if (freeFromUp)
+            //        {
+            //            break;
+            //        }
+
+            //    }
+
+            //    for (int i = 0; i < downHitData.Length; i++)
+            //    {
+            //        if (downHitData[i].collider.gameObject == this.gameObject)
+            //        {
+            //            freeFromDown = true;
+            //            continue;
+            //        }
+
+            //        freeFromDown = downHitData[i].collider == null;
+
+            //        if (freeFromDown)
+            //        {
+            //            break;
+            //        }
+            //    }
+
+            //    result = freeFromUp || freeFromDown;
+            //}
+
+            return result;
+        }
+
+        public bool IsVertical() =>
+            transform.rotation.eulerAngles.z == 0;
+
         public bool IsDouble() =>
             m_Properties.LeftPoint == m_Properties.RightPoint;
 
@@ -100,9 +215,11 @@ namespace Project.Core
             m_Moving = null;
         }
 
-        private void Update()
+        [ContextMenu("A")]
+        private void Updatea()
         {
-            Debug.Log(m_Sprite.bounds.size);
+            Debug.Log($"Domino: {gameObject.name} IsFree: {IsFree(out bool FreeFromLeft, out bool freeFromRight, out bool freeFromUp, out bool FreeFromDown)} " +
+                $"Free From Up: {freeFromUp} / Free From Down: {FreeFromDown} / Free From Left: {FreeFromLeft} / Free From Right: {freeFromRight}");
         }
         private void OnStartDraging()
         {

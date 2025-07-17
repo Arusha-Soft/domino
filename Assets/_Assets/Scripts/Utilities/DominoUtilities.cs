@@ -10,28 +10,32 @@ namespace Project.Utilities
             domino.rotation = Quaternion.identity;
         }
 
-        public static void MakeHorizontal(this Transform domino, bool isRightSide, int targetValue, Domino selectedDomino)
+        public static void MakeHorizontal(this TempDominoPoint domino, bool isRightSide, int targetValue, Domino selectedDomino)
         {
             if (isRightSide)
             {
                 if (targetValue == selectedDomino.DownValue)
                 {
-                    domino.rotation = Quaternion.Euler(0, 0, -90f);
+                    domino.transform.rotation = Quaternion.Euler(0, 0, -90f);
+                    domino.SetDownIsConnected(true);
                 }
                 else
                 {
-                    domino.rotation = Quaternion.Euler(0, 0, 90f);
+                    domino.transform.rotation = Quaternion.Euler(0, 0, 90f);
+                    domino.SetUpIsConnected(true);
                 }
             }
             else
             {
                 if (targetValue == selectedDomino.UpValue)
                 {
-                    domino.rotation = Quaternion.Euler(0, 0, -90f);
+                    domino.transform.rotation = Quaternion.Euler(0, 0, -90f);
+                    domino.SetUpIsConnected(true);
                 }
                 else
                 {
-                    domino.rotation = Quaternion.Euler(0, 0, 90f);
+                    domino.transform.rotation = Quaternion.Euler(0, 0, 90f);
+                    domino.SetDownIsConnected(true);
                 }
             }
         }

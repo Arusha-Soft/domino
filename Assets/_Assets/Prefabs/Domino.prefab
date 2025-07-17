@@ -133,7 +133,7 @@ GameObject:
   - component: {fileID: 1493680685264844416}
   - component: {fileID: 5363006436810736298}
   - component: {fileID: 7524831059439023845}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Domino
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -344,9 +344,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   m_Default: {fileID: 0}
+  m_MoveDuration: 1
   m_Sprite: {fileID: 8382614732330621738}
   m_Drag2DObject: {fileID: 7524831059439023845}
   m_Blocker: {fileID: 1365742164760018285}
+  m_DominoLayer:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!114 &7524831059439023845
 MonoBehaviour:
   m_ObjectHideFlags: 0
